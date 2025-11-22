@@ -23,5 +23,8 @@
     <ClInclude Include="CLASSES.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ConsoleAndBufferEssentials.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
