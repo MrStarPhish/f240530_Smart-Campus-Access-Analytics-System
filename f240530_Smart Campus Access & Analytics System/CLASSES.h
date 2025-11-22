@@ -9,6 +9,7 @@
 #include<string>
 #include<vector>
 #include<fstream>
+#include"ConsoleAndBufferEssentials.h"
 using namespace std;
 
 // =====================
@@ -96,16 +97,20 @@ public:
 
     void loadUsers() 
     {
-        cout << "[System] loading users..." << endl;
+		generateSystemResponse("loading users...");
         if (!loadUsersFromFile())
         {
-			cout << "[System] Failed to load users from file." << endl;
+			generateSystemResponse("Failed to load users from file.");
         }
     }
 
     void loadDoors() 
     {
-        cout << "[System] loading doors..." << endl;
+		generateSystemResponse("loading doors...");
+        if(!loadDoorsFromFile()) 
+        {
+			generateSystemResponse("Failed to load doors from file.");
+		}
     }
 
     void printUsers() 
@@ -119,6 +124,25 @@ public:
         }
     }
 
+
+    void generateSystemResponse(string resp)
+    {
+        setColor(L_BLUE);
+        cout << "[System] ";
+		setColor(DEFAULT);
+        cout << resp << endl;
+    }
+
+    void generateErrorResponse(string resp)
+    {
+        setColor(L_RED);
+        cout << "[Error] ";
+        setColor(DEFAULT);
+        cout << resp << endl;
+    }
+
+private:
+
     bool loadUsersFromFile() 
     {
 		users.clear(); // clearing the existing users
@@ -127,39 +151,54 @@ public:
 
         if (!fin) 
         {
-            cout << "Error: users.txt not found.\n";
+			generateErrorResponse("users.txt file is missing.");
             return 0;
         }
 
         int id;
         string name, role;
 
-        while (fin >> id >> name >> role) {
-            users.push_back(User(id, name, role));
+        while (fin >> id >> name >> role)
+        {
+			User temp(id, name, role);
+            users.push_back(temp);
         }
 
         fin.close();
-        cout << "[System] Loaded " << users.size() << " users.\n";
+
+        string temp = "[System] Loaded " + users.size();
+        temp += " users.";
+		generateSystemResponse(temp);
+
+        return 1;
     }
 
-    void loadDoors() {
+    bool loadDoorsFromFile() {
         doors.clear();
         ifstream fin("doors.txt");
 
-        if (!fin) {
-            cout << "Error: doors.txt not found.\n";
-            return;
+        if (!fin) 
+        {
+			generateErrorResponse("doors.txt file is missing.");
+            return 0;
         }
 
         int id;
         string loc, type;
 
-        while (fin >> id >> loc >> type) {
-            doors.push_back(Door(id, loc, type));
+        while (fin >> id >> loc >> type)
+        {
+			Door temp(id, loc, type);  
+            doors.push_back(temp);
         }
 
         fin.close();
-        cout << "[System] Loaded " << doors.size() << " doors.\n";
+
+        string temp = "[System] Loaded " + doors.size();
+        temp += " doors.";
+		generateSystemResponse(temp);
+
+        return 1;
     }
 
 

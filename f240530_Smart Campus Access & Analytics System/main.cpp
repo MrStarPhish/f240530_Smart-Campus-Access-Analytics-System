@@ -6,6 +6,7 @@
 #include<conio.h>
 #include"CLASSES.h"
 
+
 using namespace std;
 
 int main()
@@ -18,6 +19,11 @@ int main()
 	sys.loadDoors();
 
 	cout << "Smart Campus System Initialized.\n";
+
+
+
+
+
 
 	cout << endl << endl;
 	cout << "Program Terminated. [Press any key to exit]...";
