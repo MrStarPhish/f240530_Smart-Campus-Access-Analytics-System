@@ -10,8 +10,8 @@ using namespace std;
 const int WIDTH = 125;
 const int HEIGHT = 40;
 
-const int X_BOUND = 125;
-const int Y_BOUND = 40; // Boundaries Coords
+const int X_BOUND = 118;
+const int Y_BOUND = 33; // Boundaries Coords
 
 CHAR_INFO buffer[WIDTH * HEIGHT]; // character + color info
 
@@ -41,6 +41,25 @@ void clearLine(int x, int y, int length = 1)
 void setColor(int textColor = DEFAULT)
 {
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), textColor);
+}
+
+// Function to get current cursor position
+void getCursorPosition(int& x, int& y) 
+{
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    if (GetConsoleScreenBufferInfo(hConsole, &csbi)) 
+    {
+        x = csbi.dwCursorPosition.X;
+        y = csbi.dwCursorPosition.Y;
+    }
+    else 
+    {
+        // If for some reason it fails, return (0,0)
+        x = 0;
+        y = 0;
+    }
 }
 
 void clearBuffer() // to clear screen ; instead of "CLS"
@@ -158,9 +177,9 @@ string getCurrentTime()
 
 
 
-void drawBoundary() // bounds the buffer[] externally
+void drawBoundary() 
 {
-    gotoxy(0, Y_BOUND);
+    gotoxy(0, 20);
 
     for (int i = 0; i < 5; i++)
         cout << "=========================";
@@ -170,7 +189,7 @@ void drawBoundary() // bounds the buffer[] externally
     for (int i = 0; i < 5; i++)
         cout << "=========================";
 
-    for (int i = 0; i <= 40 + 2; i++)
+    for (int i = 0; i <= 33 + 2; i++)
     {
         gotoxy(X_BOUND, i);
         cout << "||";
