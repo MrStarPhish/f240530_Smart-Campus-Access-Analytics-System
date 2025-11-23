@@ -44,13 +44,157 @@ public:
 };
 
 // =====================
-// AccessRule
+// AccessRule                                    AND EVALUATION OF RULE
 // =====================
 class AccessRule {
 public:
+    int id;
     string ruleString;
 
-    AccessRule(string r = "") { this->ruleString = r; }
+    AccessRule(int id = 0, string r = "") { this->id = id; this->ruleString = r; }
+    bool evaluateRule(User u, Door d)
+    {
+        return evaluateRuleHelper(ruleString, u, d);
+    }
+    
+private:
+    bool evaluateRuleHelper(string rule, User u, Door d)
+    {
+        int hour = 12; // setting to 12 by default
+
+        string replaced = replaceConditions(rule, u, d, hour); // generate the BOOLEAN EXPRESSION of the Rule String
+
+        return evaluateBoolExpression(replaced); // final evaluation 
+    }
+
+
+    string replaceConditions(string expr, User u, Door d, int hour) // input: NOT (role=student)
+    {
+        string token; // "NOT" + "(" + "role=student" + ")"
+        string result; // "false" + "(" "true" +")"
+
+        for (int i = 0; i < expr.size(); i++)
+        {
+            char c = expr[i];
+
+            if (c == ' ' || c == '(' || c == ')') 
+            {
+                if (!token.empty()) 
+                {
+                    bool val = evaluateToken(token, u, d, hour);
+                    result += (val ? "true" : "false");
+                    token.clear();
+                }
+                result += c;
+            }
+            else 
+            {
+                token += c;
+            }
+        }
+
+        if (!token.empty()) 
+        {
+            bool val = evaluateToken(token, u, d, hour);
+            result += (val ? "true" : "false");
+        }
+
+        return result;
+    }
+
+
+    bool evaluateToken(string tok, User u, Door d, int hour)  // inputs each token and translates it.
+    {
+        if (tok == "AND" || tok == "OR" || tok == "NOT")
+            return false; // not a condition
+
+        if (tok == "true") return true; // constant T/F
+        if (tok == "false") return false;
+
+        return evaluateCondition(tok, u, d, hour); // a proper conditional token i.e role=student
+    }
+
+
+    bool evaluateCondition(string c, User u, Door d, int hour)  // to evaluate a chunk of a condition
+    {
+        // trim spaces from both sides
+        while (c[0] == ' ') c = c.substr(1);
+        while (c.back() == ' ') c.pop_back();
+
+        if (c.rfind("role=", 0) == 0) // if input:  "role=student" , then it compares and returns the result whether it matches or not... whether given condition is true or not
+            return u.role == c.substr(5);
+
+        if (c.rfind("type=", 0) == 0)
+            return d.type == c.substr(5);
+
+        if (c.rfind("door=", 0) == 0)
+            return d.location == c.substr(5);
+
+        if (c.rfind("time>=", 0) == 0)
+            return hour >= stoi(c.substr(6));
+
+        if (c.rfind("time<=", 0) == 0)
+            return hour <= stoi(c.substr(6));
+
+        return 0;
+    }
+
+  
+
+    bool evaluateBoolExpression(string expr) 
+    {
+        
+        string s;
+        for (int i = 0; i < expr.size(); i++) // Remove spaces for easier parsing
+        {
+            char c = expr[i];
+            if (c != ' ')
+                s += c;
+        }
+
+
+        return evaluateOR(s); // lowest precedence, calling OR
+    }
+
+    bool evaluateOR(string s) 
+    {
+        int pos = s.rfind("OR");
+        if (pos != string::npos) 
+        {
+            return evaluateOR(s.substr(0, pos)) || evaluateAND(s.substr(pos + 2)); // performs OR... [ A || (next equation)]
+        }
+        return evaluateAND(s);
+    }
+
+    bool evaluateAND(string s) 
+    {
+        int pos = s.rfind("AND");
+        if (pos != string::npos)
+        {
+            return evaluateAND(s.substr(0, pos)) && evaluateNOT(s.substr(pos + 3));
+        }
+        return evaluateNOT(s);
+    }
+
+    bool evaluateNOT(string s) 
+    {
+        if (s.rfind("NOT", 0) == 0) 
+        {
+            return !evaluateNOT(s.substr(3));
+        }
+        return evaluateTerm(s);
+    }
+
+    bool evaluateTerm(string s) 
+    {
+        if (s[0] == '(' && s.back() == ')')
+            return evaluateBoolExpression(s.substr(1, s.size() - 2));
+
+        return (s == "true");
+    }
+
+
+
 };
 
 // =====================
@@ -143,6 +287,7 @@ public:
     vector<Door> doors;
     vector<AccessLogEntry> accessLogs;
     vector<CommentEntry> comments;
+    vector<AccessRule> rules;
 	bool loginStatus = 0;
     int offsetOfCommandLine = 0;
     int countOfSystemMsg = 0;
@@ -173,6 +318,7 @@ public:
 			return 0;
         loadLogs(); 
         loadComments();
+        loadRules();
 		generateSystemResponse("System initialized successfully.");
         return 1;
 
@@ -221,6 +367,17 @@ public:
         if (!loadCommentsFromFile())
         {
             generateSystemResponse("Failed to load comments from file.");
+            return 0;
+        }
+        return 1;
+    }
+
+    bool loadRules()
+    {
+        generateSystemResponse("loading access rules...");
+        if (!loadRulesFromFile())
+        {
+            generateSystemResponse("Failed to load access rules from file.");
             return 0;
         }
         return 1;
@@ -728,8 +885,39 @@ public:
         return 1;
     }
 
+    bool loadRulesFromFile() 
+    {
+        rules.clear();
+        ifstream fin("rules.txt");
+
+        if (!fin) 
+        {
+            generateWarningResponse(" rules.txt not found.");
+            return 0;
+        }
+
+        int id;
+        string rest;
+
+        while (fin >> id) 
+        {
+            getline(fin, rest);
+            if (rest.size() > 1 && rest[0] == ' ')
+                rest = rest.substr(1);
+            rules.push_back(AccessRule(id, rest));
+        }
+
+        fin.close();
+        generateSystemResponse("Access Rules Loaded.");
+        return 1;
+    }
+
+
 
     // ===================== ACCESS RULE TEMP =====================
+
+    
+
 
     bool canAccess(User u, Door d)
     {
@@ -977,6 +1165,18 @@ public:
         }
 
         bool allowed = canAccess(*u, *d);
+        // Rule Engine (deny-only rules)
+        for (auto& r : rules)
+        {
+            if (r.evaluateRule(*u, *d)) 
+            {
+                generateSystemResponse("[Rule Denied] Rule " + to_string(r.id) + " triggered.");
+                preview("Rule denied access: " + r.ruleString);
+                allowed = false;
+                break;
+            }
+        }
+
 
         
         generateAccessLog(uid, did, allowed);
