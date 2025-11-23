@@ -1,0 +1,3 @@
+1 (role=student AND type=datacenter)
+2 (role=student AND type=serverroom)
+3 (role=student AND type=examhall AND time>=18)
