@@ -11,16 +11,20 @@ using namespace std;
 
 int main()
 {
-	SetConsoleWindowSize(125, 40);
+	SetConsoleWindowSize(WIDTH, HEIGHT);
 	//SetConsoleBufferSize(125, 40);
-	drawBoundary();
-	gotoxy(0,0);
-
+	
 	System sys;
 
-	sys.loadUsers();
-	sys.loadDoors();
 
+	if (sys.initialize())
+	{
+		sys.start();  // <--- Ignition
+	}
+	else 
+	{
+		sys.generateErrorResponse("System failed to initialize. Exiting...");
+	}
 
 	
 

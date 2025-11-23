@@ -13,6 +13,15 @@ const int HEIGHT = 40;
 const int X_BOUND = 118;
 const int Y_BOUND = 33; // Boundaries Coords
 
+const int COMMAND_PANEL_X = 0;
+const int COMMAND_PANEL_Y = 1;
+
+const int SYSTEM_PANEL_X = 0;
+const int SYSTEM_PANEL_Y = 24;
+
+const int PREVIEW_PANEL_X = 52;
+const int PREVIEW_PANEL_Y = 1;
+
 CHAR_INFO buffer[WIDTH * HEIGHT]; // character + color info
 
 enum ColorCode
@@ -177,6 +186,8 @@ string getCurrentTime()
 
 
 
+
+
 void drawBoundary() 
 {
     gotoxy(0, 20);
@@ -189,10 +200,17 @@ void drawBoundary()
     for (int i = 0; i < 5; i++)
         cout << "=========================";
 
-    for (int i = 0; i <= 33 + 2; i++)
+    for (int i = 0; i <= 33 + 2; i++) // left boundary
     {
         gotoxy(X_BOUND, i);
         cout << "||";
     }
+
+    for (int i = 0; i < 20; i++) // middle boundary
+    {
+        gotoxy(50, i);
+        cout << "^^";
+    }
+
 
 }
