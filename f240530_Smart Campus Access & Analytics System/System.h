@@ -981,6 +981,10 @@ public:
                     }
                     generateSystemResponse("Printed Access Logs in Preview Panel.");
                 }
+                else
+                {
+                    generateErrorResponse("Invalid Parameters. /show <entity> . /cmds for more info.");
+                }
             }
             else if (cmd == "/graph")
             {
@@ -1008,7 +1012,7 @@ public:
                 }
                 else
                 {
-                    generateErrorResponse("Unknown command. Type 'help' for a list of commands.");
+                    generateErrorResponse("Invalid Parameters. /graph <display/mst/ham/eular>");
                 }
             }
             else
