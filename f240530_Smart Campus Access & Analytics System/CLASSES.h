@@ -8,6 +8,7 @@
 #include<iostream>
 #include<string>
 #include<vector>
+#include<stack>
 #include<fstream>
 #include"ConsoleAndBufferEssentials.h"
 using namespace std;
@@ -259,10 +260,234 @@ public:
 // =====================
 // Campus Graph (simple for now)
 // =====================
-class CampusGraph {
+class CampusGraph
+{
 public:
-    // adjacency list will be implemented later
-    CampusGraph() {}
+    vector<vector<pair<int, int>>> adj;  // adjacency list 
+    int size = 0;
+    CampusGraph(int n = 0) 
+    {
+        size = n;
+        adj.resize(n + 1); // 1-based indexing
+    }
+    void setSize(int sz)
+    {
+        size = sz;
+    }
+    void addEdge(int a, int b, int w) 
+    {
+        if (a < 1 || b < 1 || a > size || b > size )
+            return;
+
+        adj[a].push_back({ b, w });
+        adj[b].push_back({ a, w });   // undirected
+    }
+    string getAdjList() 
+    {
+        string out;
+
+        for (int i = 1; i <= size; i++) 
+        {
+            out += to_string(i) + ": ";
+            for (auto& p : adj[i]) {
+                out += "(" + to_string(p.first) + ", w=" + to_string(p.second) + ") ";
+            }
+            out += "\n";
+        }
+
+        return out;
+    }
+
+    string prim() 
+    {
+        vector<int> key(size + 1, INT_MAX);
+        vector<bool> inMST(size + 1, false);
+        vector<int> parent(size + 1, -1);
+
+        key[1] = 0; // start from node 1
+
+        for (int i = 1; i <= size; i++) 
+        {
+            int u = -1;
+
+            
+            for (int v = 1; v <= size; v++)  // pick min key vertex not in MST
+            {
+                if (!inMST[v] && (u == -1 || key[v] < key[u]))
+                    u = v;
+            }
+
+            inMST[u] = true;
+
+            
+            for (auto& p : adj[u]) // checking every neighbors here
+            {
+                int v = p.first;
+                int w = p.second;
+
+                if (!inMST[v] && w < key[v]) 
+                {
+                    key[v] = w;
+                    parent[v] = u;
+                }
+            }
+        }
+
+        string out = "--- MST (Prim's) ---\n";
+        int total = 0;
+
+        for (int v = 2; v <= size; v++)
+        {
+            if (parent[v] != -1)
+            {
+                out += to_string(parent[v]) + " - " + to_string(v) +
+                    " (w=" + to_string(key[v]) + ")\n";
+                total += key[v];
+            }
+        }
+
+        out += "\tTotal cost = " + to_string(total) + "\n";
+        return out;
+    }
+
+    bool hamDFS(int u, vector<bool>& vis, vector<int>& path) 
+    {
+        if ((int)path.size() == size)
+            return true;
+
+        for (auto& p : adj[u])
+        {
+            int v = p.first;
+            if (!vis[v])
+            {
+                vis[v] = true;
+                path.push_back(v);
+                if (hamDFS(v, vis, path))
+                    return true;
+                path.pop_back();
+                vis[v] = false;
+            }
+        }
+        return false;
+    }
+
+    string findHamiltonianPath() 
+    {
+        for (int start = 1; start <= size; start++) 
+        {
+            vector<bool> vis(size + 1, false);
+            vector<int> path;
+
+            vis[start] = true;
+            path.push_back(start);
+
+            if (hamDFS(start, vis, path))
+            {
+                string out = "Hamiltonian Path:\n";
+                int i = 0;
+                for (int v : path)
+                {
+                    out += to_string(v) + " -> ";
+                    if (i % 2 == 0)
+                        out += "\n";
+                    i++;
+                }
+                out.pop_back(); out.pop_back(); out.pop_back(); out.pop_back(); out.pop_back();
+                out += ".\n";
+                return out;
+            }
+        }
+        return "No Hamiltonian Path exists in this graph.\n";
+    }
+
+
+    string findEulerPath()
+    {
+        vector<int> degree(size + 1, 0);
+
+        for (int u = 1; u <= size; u++) // compute degrees
+            degree[u] = adj[u].size();
+
+
+        vector<int> odd;         // count odd degree vertices
+        for (int i = 1; i <= size; i++)
+        {
+            if (degree[i] % 2 == 1)
+                odd.push_back(i);
+        }
+
+        if (odd.size() != 0 && odd.size() != 2) // No Euler path if odd > 2
+            return "No Euler Path or Circuit exists.\n";
+
+        int start = 1; // pick start node
+        if (odd.size() == 2)
+            start = odd[0];
+
+        vector<vector<int>> g(size + 1);
+
+        // copy adjacency list
+        for (int u = 1; u <= size; u++)
+            for (auto& p : adj[u])
+                g[u].push_back(p.first);
+        
+        auto removeEdge = [&](int a, int b) 
+            {
+            for (int i = 0; i < g[a].size(); i++) 
+            {
+                if (g[a][i] == b) 
+                {
+                    g[a].erase(g[a].begin() + i);
+                    break;
+                }
+            }
+            };
+
+
+        stack<int> st;
+        vector<int> path;
+        st.push(start);
+
+        
+        while (!st.empty()) // Hierholzer's Algorithm
+        {
+            int v = st.top();
+            if (!g[v].empty())
+            {
+                int u = g[v].back();
+                g[v].pop_back();
+                removeEdge(u, v);
+                st.push(u);
+            }
+            else 
+            {
+                path.push_back(v);
+                st.pop();
+            }
+        }
+
+        string out;
+        if (odd.size() == 0) 
+            out += "Euler Circuit exists:\n";
+        else 
+            out += "Euler Path exists:\n";
+
+        int i = 0;
+        for (int v : path)
+        {
+            out += to_string(v) + " -> ";
+            if (i % 2 == 0)
+                out += "\n";
+            i++;
+        }
+        out.pop_back(); out.pop_back(); out.pop_back(); out.pop_back(); // remove arrow
+
+        out += ".\n";
+        return out;
+    }
+
+
+
+
 };
 
 class CommentEntry
@@ -306,6 +531,7 @@ public:
     vector<AccessLogEntry> accessLogs;
     vector<CommentEntry> comments;
     vector<AccessRule> rules;
+    CampusGraph graph;
 	bool loginStatus = 0;
     int offsetOfCommandLine = 0;
     int countOfSystemMsg = 0;
@@ -337,6 +563,7 @@ public:
         loadLogs(); 
         loadComments();
         loadRules();
+        loadGraph(1); // 0 for edges.txt || 1 for edges2.txt that has EULAR Path
 		generateSystemResponse("System initialized successfully.");
         return 1;
 
@@ -401,6 +628,28 @@ public:
         return 1;
     }
 
+    bool loadGraph(int i = 0)
+    {
+        generateSystemResponse("loading graphs...");
+        graph.setSize(doors.size());
+        if (i == 0)
+        {
+            if (!loadGraphFromFile())
+            {
+                generateSystemResponse("Failed to load graph from file.");
+                return 0;
+            }
+        }
+        else if (i == 1)
+        {
+            if (!loadGraphFromFile1())
+            {
+                generateSystemResponse("Failed to load graph from file2.");
+                return 0;
+            }
+        }
+        return 1;
+    }
     
 
 
@@ -592,8 +841,33 @@ public:
         }
     }
 
+    void printAdjacencyList()
+    {
+        clearPreviewPanel();
+        string temp = graph.getAdjList();
+        preview(temp);
+    }
     
+    void printMST()
+    {
+        clearPreviewPanel();
+        string temp = graph.prim();
+        preview(temp);
+    }
 
+    void printHamiltonian()
+    {
+        clearPreviewPanel();
+        string temp = graph.findHamiltonianPath();
+        preview(temp);
+    }
+
+    void printEular()
+    {
+        clearPreviewPanel();
+        string temp = graph.findEulerPath();
+        preview(temp);
+    }
 
 	// ===================== SYSTEM MESSAGES GENERATION =====================
 
@@ -831,6 +1105,68 @@ public:
         return 1;
     }
 
+    bool loadGraphFromFile()
+    {
+        graph.adj.clear();
+        graph.adj.resize(graph.size + 1);
+
+        ifstream fin("edges.txt");
+        if (!fin)
+        {
+            generateErrorResponse("edges.txt file is missing.");
+            return 0;
+        }
+        
+
+
+        int a, b, w;
+
+        while (fin >> a >> b >> w)
+        {
+            graph.addEdge(a, b, w);
+        }
+
+        fin.close();
+
+        string temp = "Loaded ";
+        temp += to_string(graph.size);
+        temp += " edges from file.";
+        generateSystemResponse(temp);
+
+        return 1;
+    }
+
+    bool loadGraphFromFile1() // this file will have EULAR PATH/CIRCUIT
+    {
+        graph.adj.clear();
+        graph.adj.resize(graph.size + 1);
+
+        ifstream fin("edges2.txt");
+        if (!fin)
+        {
+            generateErrorResponse("edges2.txt file is missing.");
+            return 0;
+        }
+
+
+
+        int a, b, w;
+
+        while (fin >> a >> b >> w)
+        {
+            graph.addEdge(a, b, w);
+        }
+
+        fin.close();
+
+        string temp = "Loaded ";
+        temp += to_string(graph.size);
+        temp += " edges from file2.";
+        generateSystemResponse(temp);
+
+        return 1;
+    }
+
     bool loadAccessLogsFromFile()
     {
         accessLogs.clear();
@@ -929,6 +1265,33 @@ public:
         generateSystemResponse("Access Rules Loaded.");
         return 1;
     }
+
+    /*bool loadGraphFromFile()
+    {
+        rules.clear();
+        ifstream fin("graph.txt");
+
+        if (!fin)
+        {
+            generateWarningResponse(" graph.txt not found.");
+            return 0;
+        }
+
+        int id;
+        string rest;
+
+        while (fin >> id)
+        {
+            getline(fin, rest);
+            if (rest.size() > 1 && rest[0] == ' ')
+                rest = rest.substr(1);
+            rules.push_back(AccessRule(id, rest));
+        }
+
+        fin.close();
+        generateSystemResponse("Graph Loaded.");
+        return 1;
+    }*/
 
 
 
@@ -1093,7 +1456,6 @@ public:
                     if (handleAccess(parameters[0], parameters[1]))
                     {
                         generateSystemResponse("Access Command Used.");
-
                     }
                     else
                     {
@@ -1139,6 +1501,35 @@ public:
                         printLogs(0);
                     }
                     generateSystemResponse("Printed Access Logs in Preview Panel.");
+                }
+            }
+            else if (cmd == "/graph")
+            {
+                string para1;
+                ss >> para1;
+                if (para1 == "display")
+                {
+                    printAdjacencyList();
+                    generateSystemResponse("Printed Adjacency List in Preview Panel.");
+                }
+                else if (para1 == "mst" || para1 == "MST")
+                {
+                    printMST();
+                    generateSystemResponse("Printed MST in Preview Panel.");
+                }
+                else if (para1 == "ham" || para1 == "hamiltonian")
+                {
+                    printHamiltonian();
+                    generateSystemResponse("Printed Hamiltonian in Preview Panel.");
+                }
+                else if (para1 == "eular" || para1 == "EULAR")
+                {
+                    printEular();
+                    generateSystemResponse("Printed Eular Path in Preview Panel.");
+                }
+                else
+                {
+                    generateErrorResponse("Unknown command. Type 'help' for a list of commands.");
                 }
             }
             else
