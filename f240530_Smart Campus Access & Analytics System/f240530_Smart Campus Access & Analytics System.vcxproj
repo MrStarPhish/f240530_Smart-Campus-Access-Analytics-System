@@ -126,8 +126,12 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CLASSES.h" />
+    <ClInclude Include="AccessRules.h" />
+    <ClInclude Include="System.h" />
     <ClInclude Include="ConsoleAndBufferEssentials.h" />
+    <ClInclude Include="Graph.h" />
+    <ClInclude Include="LogsAndComments.h" />
+    <ClInclude Include="UserAndDoors.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

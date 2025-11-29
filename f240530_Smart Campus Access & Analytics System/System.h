@@ -2,8 +2,8 @@
 
 // All the classes and their function are declared here
 
-#ifndef CLASSES_H
-#define CLASSES_H
+#ifndef System_H
+#define System_H
 
 #include<iostream>
 #include<string>
@@ -11,520 +11,19 @@
 #include<stack>
 #include<fstream>
 #include"ConsoleAndBufferEssentials.h"
+#include"LogsAndComments.h"
+#include"AccessRules.h"
+#include"UserAndDoors.h"
+#include"Graph.h"
+
 using namespace std;
 
-// ========================================== USER =======================
-class User {
-public:
-    int id;
-    string name;
-    string role; // student, teacher, staff, guard, labat (lab attendant)
-
-    User(int id = 0, string name = "", string role = "")
-    {
-        this->id = id;
-		this->name = name;
-        this->role = role;
-    }
-};
-
-// ========================================== DOOR =======================
-
-class Door {
-public:
-    int id;
-    string location;
-    string type; // classroom, examhall, datacenter, lab
-
-    Door(int id = 0, string location = "", string type = "")
-    {
-        this->id = id;
-        this->location = location;
-        this->type = type;
-    }
-};
 
 // =====================
-// AccessRule                                    AND EVALUATION OF RULE
+// MAIN SYSTEM // Sab kuch idhar se control kr rhay :)
 // =====================
-class AccessRule {
-public:
-    int id;
-    string ruleString;
-
-    AccessRule(int id = 0, string r = "") { this->id = id; this->ruleString = r; }
-    bool evaluateRule(User u, Door d)
-    {
-        return evaluateRuleHelper(ruleString, u, d);
-    }
-    
-private:
-    bool evaluateRuleHelper(string rule, User u, Door d)
-    {
-        int hour = 12; // setting to 12 by default
-
-        string replaced = replaceConditions(rule, u, d, hour); // generate the BOOLEAN EXPRESSION of the Rule String
-
-        return evaluateBoolExpression(replaced); // final evaluation 
-    }
-
-
-    string replaceConditions(string expr, User u, Door d, int hour) // input: NOT (role=student)
-    {
-        string token; // "NOT" + "(" + "role=student" + ")"
-        string result; // "false" + "(" "true" +")"
-
-        for (int i = 0; i < expr.size(); i++)
-        {
-            char c = expr[i];
-
-            if (c == ' ' || c == '(' || c == ')') 
-            {
-                if (!token.empty()) 
-                {
-                    int val = evaluateToken(token, u, d, hour);
-                    if (val == 0)
-                        result += "false";
-                    else if (val == 1)
-                        result += "true";
-                    else if (token == "AND" || token == "OR" || token == "NOT")
-                    {
-                        result += token;
-                    }
-                    token.clear();
-                }
-                result += c;
-            }
-            else 
-            {
-                token += c;
-            }
-        }
-
-        if (!token.empty()) 
-        {
-            int val = evaluateToken(token, u, d, hour);
-            if (val == 0)
-                result += "false";
-            else if (val == 1)
-                result += "true";
-            else if (token == "AND" || token == "OR" || token == "NOT")
-            {
-                result += token;
-            }
-        }
-
-        return result;
-    }
-
-
-    int evaluateToken(string tok, User u, Door d, int hour)  // inputs each token and translates it.
-    {
-        if (tok == "AND" || tok == "OR" || tok == "NOT")
-            return -1; // not a condition
-
-        if (tok == "true") return 1; // constant T/F
-        if (tok == "false") return 0;
-
-        return evaluateCondition(tok, u, d, hour); // a proper conditional token i.e role=student
-    }
-
-
-    bool evaluateCondition(string c, User u, Door d, int hour)  // to evaluate a chunk of a condition
-    {
-        // trim spaces from both sides
-        while (c[0] == ' ') c = c.substr(1);
-        while (c.back() == ' ') c.pop_back();
-
-        if (c.rfind("role=", 0) == 0) // if input:  "role=student" , then it compares and returns the result whether it matches or not... whether given condition is true or not
-            return u.role == c.substr(5);
-
-        if (c.rfind("type=", 0) == 0)
-            return d.type == c.substr(5);
-
-        if (c.rfind("door=", 0) == 0)
-            return d.location == c.substr(5);
-
-        if (c.rfind("time>=", 0) == 0)
-            return hour >= stoi(c.substr(6));
-
-        if (c.rfind("time<=", 0) == 0)
-            return hour <= stoi(c.substr(6));
-
-        return 0;
-    }
-
-  
-
-    bool evaluateBoolExpression(string expr) 
-    {
-        
-        string s;
-        for (int i = 0; i < expr.size(); i++) // Remove spaces for easier parsing
-        {
-            char c = expr[i];
-            if (c != ' ')
-                s += c;
-        }
-
-
-        return evaluateOR(s); // lowest precedence, calling OR
-    }
-
-    bool evaluateOR(string s) 
-    {
-        int pos = s.rfind("OR");
-        if (pos != string::npos) 
-        {
-            return evaluateOR(s.substr(0, pos)) || evaluateAND(s.substr(pos + 2)); // performs OR... [ A || (next equation)]
-        }
-        return evaluateAND(s);
-    }
-
-    bool evaluateAND(string s) 
-    {
-        int pos = s.rfind("AND");
-        if (pos != string::npos)
-        {
-            return evaluateAND(s.substr(0, pos)) && evaluateNOT(s.substr(pos + 3));
-        }
-        return evaluateNOT(s);
-    }
-
-    bool evaluateNOT(string s) 
-    {
-        if (s.rfind("NOT", 0) == 0) 
-        {
-            return !evaluateNOT(s.substr(3));
-        }
-        return evaluateTerm(s);
-    }
-
-    bool evaluateTerm(string s) 
-    {
-        if (s[0] == '(' && s.back() == ')')
-            return evaluateBoolExpression(s.substr(1, s.size() - 2));
-        
-        if (s == "(true" || s == "true)") // had to hardcode this part due to a bug...
-            return true;
-        if (s == "(false" || s == "false)")
-            return false;
-        return (s == "true");
-    }
-
-
-
-};
-
-// =====================
-// AccessLog Entry
-// =====================
-class AccessLogEntry
+class System 
 {
-public:
-    string timestamp;
-    int userID;
-    int doorID;
-    bool granted;
-
-    AccessLogEntry(string t = "", int u = 0, int d = 0, bool g = false)
-    {
-        timestamp = t;
-		userID = u;
-        doorID = d;
-		granted = g;
-    }
-
-    string logToString()
-    {
-        string temp = "[" + timestamp + "] UID=" + to_string(userID) + " DID=" + to_string(doorID) + " ACCESS=";
-        temp += (granted ? "GRANTED" : "DENIED");
-        return temp;
-    }
-    
-    bool appendToFile()
-    {
-        ofstream fout("accesslog.txt", ios::app);
-
-        if (!fout)
-        {
-            return 0;
-        }
-
-        fout << logToString() << "\n";
-        fout.close();
-        return 1;
-    }
-};
-
-// =====================
-// Campus Graph (simple for now)
-// =====================
-class CampusGraph
-{
-public:
-    vector<vector<pair<int, int>>> adj;  // adjacency list 
-    int size = 0;
-    CampusGraph(int n = 0) 
-    {
-        size = n;
-        adj.resize(n + 1); // 1-based indexing
-    }
-    void setSize(int sz)
-    {
-        size = sz;
-    }
-    void addEdge(int a, int b, int w) 
-    {
-        if (a < 1 || b < 1 || a > size || b > size )
-            return;
-
-        adj[a].push_back({ b, w });
-        adj[b].push_back({ a, w });   // undirected
-    }
-    string getAdjList() 
-    {
-        string out;
-
-        for (int i = 1; i <= size; i++) 
-        {
-            out += to_string(i) + ": ";
-            for (auto& p : adj[i]) {
-                out += "(" + to_string(p.first) + ", w=" + to_string(p.second) + ") ";
-            }
-            out += "\n";
-        }
-
-        return out;
-    }
-
-    string prim() 
-    {
-        vector<int> key(size + 1, INT_MAX);
-        vector<bool> inMST(size + 1, false);
-        vector<int> parent(size + 1, -1);
-
-        key[1] = 0; // start from node 1
-
-        for (int i = 1; i <= size; i++) 
-        {
-            int u = -1;
-
-            
-            for (int v = 1; v <= size; v++)  // pick min key vertex not in MST
-            {
-                if (!inMST[v] && (u == -1 || key[v] < key[u]))
-                    u = v;
-            }
-
-            inMST[u] = true;
-
-            
-            for (auto& p : adj[u]) // checking every neighbors here
-            {
-                int v = p.first;
-                int w = p.second;
-
-                if (!inMST[v] && w < key[v]) 
-                {
-                    key[v] = w;
-                    parent[v] = u;
-                }
-            }
-        }
-
-        string out = "--- MST (Prim's) ---\n";
-        int total = 0;
-
-        for (int v = 2; v <= size; v++)
-        {
-            if (parent[v] != -1)
-            {
-                out += to_string(parent[v]) + " - " + to_string(v) +
-                    " (w=" + to_string(key[v]) + ")\n";
-                total += key[v];
-            }
-        }
-
-        out += "\tTotal cost = " + to_string(total) + "\n";
-        return out;
-    }
-
-    bool hamDFS(int u, vector<bool>& vis, vector<int>& path) 
-    {
-        if ((int)path.size() == size)
-            return true;
-
-        for (auto& p : adj[u])
-        {
-            int v = p.first;
-            if (!vis[v])
-            {
-                vis[v] = true;
-                path.push_back(v);
-                if (hamDFS(v, vis, path))
-                    return true;
-                path.pop_back();
-                vis[v] = false;
-            }
-        }
-        return false;
-    }
-
-    string findHamiltonianPath() 
-    {
-        for (int start = 1; start <= size; start++) 
-        {
-            vector<bool> vis(size + 1, false);
-            vector<int> path;
-
-            vis[start] = true;
-            path.push_back(start);
-
-            if (hamDFS(start, vis, path))
-            {
-                string out = "Hamiltonian Path:\n";
-                int i = 0;
-                for (int v : path)
-                {
-                    out += to_string(v) + " -> ";
-                    if (i % 2 == 0)
-                        out += "\n";
-                    i++;
-                }
-                out.pop_back(); out.pop_back(); out.pop_back(); out.pop_back(); out.pop_back();
-                out += ".\n";
-                return out;
-            }
-        }
-        return "No Hamiltonian Path exists in this graph.\n";
-    }
-
-
-    string findEulerPath()
-    {
-        vector<int> degree(size + 1, 0);
-
-        for (int u = 1; u <= size; u++) // compute degrees
-            degree[u] = adj[u].size();
-
-
-        vector<int> odd;         // count odd degree vertices
-        for (int i = 1; i <= size; i++)
-        {
-            if (degree[i] % 2 == 1)
-                odd.push_back(i);
-        }
-
-        if (odd.size() != 0 && odd.size() != 2) // No Euler path if odd > 2
-            return "No Euler Path or Circuit exists.\n";
-
-        int start = 1; // pick start node
-        if (odd.size() == 2)
-            start = odd[0];
-
-        vector<vector<int>> g(size + 1);
-
-        // copy adjacency list
-        for (int u = 1; u <= size; u++)
-            for (auto& p : adj[u])
-                g[u].push_back(p.first);
-        
-        auto removeEdge = [&](int a, int b) 
-            {
-            for (int i = 0; i < g[a].size(); i++) 
-            {
-                if (g[a][i] == b) 
-                {
-                    g[a].erase(g[a].begin() + i);
-                    break;
-                }
-            }
-            };
-
-
-        stack<int> st;
-        vector<int> path;
-        st.push(start);
-
-        
-        while (!st.empty()) // Hierholzer's Algorithm
-        {
-            int v = st.top();
-            if (!g[v].empty())
-            {
-                int u = g[v].back();
-                g[v].pop_back();
-                removeEdge(u, v);
-                st.push(u);
-            }
-            else 
-            {
-                path.push_back(v);
-                st.pop();
-            }
-        }
-
-        string out;
-        if (odd.size() == 0) 
-            out += "Euler Circuit exists:\n";
-        else 
-            out += "Euler Path exists:\n";
-
-        int i = 0;
-        for (int v : path)
-        {
-            out += to_string(v) + " -> ";
-            if (i % 2 == 0)
-                out += "\n";
-            i++;
-        }
-        out.pop_back(); out.pop_back(); out.pop_back(); out.pop_back(); // remove arrow
-
-        out += ".\n";
-        return out;
-    }
-
-
-
-
-};
-
-class CommentEntry
-{
-public:
-    string timestamp;
-    string message;
-
-    CommentEntry(string t = "", string msg = "")
-    {
-        timestamp = t; message = msg;
-    }
-
-    string commentToString()
-    {
-        return "[" + timestamp + "] " + message;
-    }
-
-    bool appendToFile()
-    {
-        ofstream fout("comments.txt", ios::app);
-
-        if (!fout)
-        {
-            return 0;
-        }
-
-        fout << commentToString() << "\n";
-        fout.close();
-        return 1;
-    }
-};
-
-// =====================
-// MAIN SYSTEM
-// =====================
-class System {
 public:
     vector<User> users;
     vector<Door> doors;
@@ -543,10 +42,13 @@ public:
     {
         gotoxy(0, 0);
         generateSystemResponse("Smart Campus System Started. Awaiting commands...");
-        while (true)
+        loginStatus = 1;
+        while (loginStatus)
         {
             inputCommand();
         }
+
+        generateSystemResponse("System Exited.");
     }
 
 
@@ -568,6 +70,11 @@ public:
         return 1;
 
 	}
+
+    void insertCommandManually(string cmd)
+    {
+        processCommand(cmd); // processing the given command here
+    }
 
     // ===================== LOADING RESOURCES HERE =====================
 
@@ -691,6 +198,7 @@ public:
             "/show users, /show doors\n"
             "/cls, /previewcls, /systemcls, /clsall, /restart\n"
             "/access <userID> <doorID>\n"
+            "/graph <display/mst/eular/ham>\n"
         );
     }
 
@@ -1266,36 +774,8 @@ public:
         return 1;
     }
 
-    /*bool loadGraphFromFile()
-    {
-        rules.clear();
-        ifstream fin("graph.txt");
 
-        if (!fin)
-        {
-            generateWarningResponse(" graph.txt not found.");
-            return 0;
-        }
-
-        int id;
-        string rest;
-
-        while (fin >> id)
-        {
-            getline(fin, rest);
-            if (rest.size() > 1 && rest[0] == ' ')
-                rest = rest.substr(1);
-            rules.push_back(AccessRule(id, rest));
-        }
-
-        fin.close();
-        generateSystemResponse("Graph Loaded.");
-        return 1;
-    }*/
-
-
-
-    // ===================== ACCESS RULE TEMP =====================
+    // ===================== ACCESS RULE SECONDARY =====================
 
     
 
@@ -1338,9 +818,8 @@ public:
         getline(cin, command);
 
         offsetOfCommandLine++;
-        processCommand(command);
+        processCommand(command); // processing the given command here
 
-        // Command processing will be implemented later
     }
 
     void processCommand(string command) // sab commands idhar process hongy
@@ -1356,10 +835,10 @@ public:
             generateLogResponse("Added comment: " + command.substr(1));
             return;
 		}
-        else if (command == "/exit")
+        else if (command == "/exit" || command == "/quit")
         {
             generateSystemResponse("Exiting the system...");
-            // exit code
+            loginStatus = 0;
         }
         else if (command == "/help")
         {
@@ -1573,10 +1052,9 @@ public:
             return 0;
         }
 
-        //bool allowed = canAccess(*u, *d);
-        bool allowed = 1;
-        // Rule Engine (deny-only rules)
-        for (auto& r : rules)
+        bool allowed = 1; // by default allowed
+        
+        for (auto& r : rules) // checks every rule , Rule Engine (deny-only rules)
         {
             if (r.evaluateRule(*u, *d)) 
             {
@@ -1587,6 +1065,7 @@ public:
             }
         }
 
+        //bool allowed = canAccess(*u, *d); // secondary access rule processor
 
         
         generateAccessLog(uid, did, allowed);

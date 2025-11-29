@@ -4,7 +4,7 @@
 
 #include<iostream>
 #include<conio.h>
-#include"CLASSES.h"
+#include"System.h"
 
 
 using namespace std;
@@ -29,7 +29,8 @@ int main()
 	
 
 	cout << endl << endl;
-	cout << "Program Terminated. [Press any key to exit]...";
+	sys.insertCommandManually("/restart");
+	sys.generateSystemResponse("Program Terminated. [Press any key to exit]...");
 
 	_getch();
 	return 0;

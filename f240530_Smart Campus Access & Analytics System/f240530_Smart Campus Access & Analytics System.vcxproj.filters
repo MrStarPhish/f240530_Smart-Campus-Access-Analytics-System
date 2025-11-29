@@ -20,10 +20,22 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CLASSES.h">
+    <ClInclude Include="System.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ConsoleAndBufferEssentials.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AccessRules.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UserAndDoors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LogsAndComments.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
