@@ -913,6 +913,11 @@ public:
 			gotoxy(0, 0);
 
         }   
+        else if (command == "/about")
+        {
+            clearPreviewPanel();
+            generateSystemResponse("Oh it's just a Semester Project built by Phishy f240530 :>");
+        }
         else if (command[0] == '/') // some command                      GENERAL CASE HERE ==========
         {
             stringstream ss(command);
